@@ -105,6 +105,7 @@ class Queen(Coin):
     def __init__(self, radius, mass, position: Vector2, container: Rect):
         """ Constructs a queen coin """
         Coin.__init__(self, radius, mass, position, container)
+        self.color = (255, 0, 0)
 
     def reset(self):
         """ Moving it back to the center """
@@ -112,7 +113,7 @@ class Queen(Coin):
         self.velocity = Vector2()
 
     def draw(self, win):
-        pygame.draw.circle(win, (255, 0, 0), (int(self.position.x), int(self.position.y)), int(self.radius))
+        pygame.draw.circle(win, self.color, (int(self.position.x), int(self.position.y)), int(self.radius))
 
 
 class Striker(Coin):
