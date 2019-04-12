@@ -246,6 +246,23 @@ class Carrom:
         striker_radius = m * Carrom.STRIKER_RADIUS
         self.striker = Striker(striker_radius, Carrom.STRIKER_MASS, self.container)
 
+    def rotate_carrom_men(self, init_rotation=60):
+        """ if player wants to rotate the carrom men at the start call this function """
+        center = Vector2(self.container.center)
+        m = self.board.width / Carrom.TOTAL_LENGTH
+        coin_radius = m * Carrom.COIN_RADIUS
+        vec = Vector2(0, -1)
+        vec.rotate_ip(init_rotation)
+        vec.scale_to_length(coin_radius * 2)
+        for index, coin in enumerate(self.coins):
+            if index == 6:
+                vec.scale_to_length(coin_radius * 4)
+            elif index == 12:
+                vec.scale_to_length(coin_radius * (2 * sqrt(3)))
+                vec.rotate_ip(30)
+            coin.position = center + vec
+            vec.rotate_ip(60)
+
     def draw_coins(self, win):
         coins = self.player_coins[0] + self.player_coins[1]
         if not self.pocketed_striker:
@@ -413,7 +430,10 @@ c.striker.position.y = c.striker_y_position[c.player_turn]
 c.striker.position.x = (c.striker_x_position_limits[0] + c.striker_x_position_limits[1])/2
 max_speed = 40
 speed = 0
-angle = -90 if c.player_turn == 0 else 90
+angle = -90
+""" This is used to check if rotation of coins is possible """
+game_started = False
+rotation = 60
 speed_vec = Vector2()
 handle_keys = True
 run = True
@@ -427,9 +447,9 @@ while run:
         """ If nothing is moving, then space may be pressed """
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                print("Moving status:", c.check_moving())
+                game_started = True
                 if not c.check_moving() and not c.game_over:
-                    c.striker.velocity.from_polar((speed, angle))
+                    c.striker.velocity.from_polar((speed, angle if c.player_turn == 0 else -angle))
                     print("Not moving")
                     handle_keys = False
     if c.game_over:
@@ -444,57 +464,33 @@ while run:
 
     if handle_keys:
         pressed = pygame.key.get_pressed()
-        if pressed[pygame.K_a]:
-            c.striker.position.x -= 4
-        if pressed[pygame.K_d]:
-            c.striker.position.x += 4
-        if pressed[pygame.K_LEFT]:
-            c.striker.position.x -= 1
-        if pressed[pygame.K_RIGHT]:
-            c.striker.position.x += 1
-        if pressed[pygame.K_s]:
-            speed -= 2
-        if pressed[pygame.K_w]:
-            speed += 2
-        if pressed[pygame.K_DOWN]:
-            speed -= 0.5
-        if pressed[pygame.K_UP]:
-            speed += 0.5
+        if pressed[pygame.K_a] or pressed[pygame.K_LEFT]:
+            c.striker.position.x -= 4 if not pressed[pygame.K_LSHIFT] else 0.5
+        if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]:
+            c.striker.position.x += 4 if not pressed[pygame.K_LSHIFT] else 0.5
+        if pressed[pygame.K_s] or pressed[pygame.K_DOWN]:
+            speed -= 2 if not pressed[pygame.K_LSHIFT] else 0.25
+        if pressed[pygame.K_w] or pressed[pygame.K_UP]:
+            speed += 2 if not pressed[pygame.K_LSHIFT] else 0.25
         if pressed[pygame.K_q]:
-            if c.player_turn == 0:
-                angle -= 2
-            else:
-                angle += 2
+            angle -= 2 if not pressed[pygame.K_LSHIFT] else 0.25
         if pressed[pygame.K_e]:
-            if c.player_turn == 0:
-                angle += 2
-            else:
-                angle -= 2
-        if pressed[pygame.K_z]:
-            if c.player_turn == 0:
-                angle -= 0.4
-            else:
-                angle += 0.4
-        if pressed[pygame.K_c]:
-            if c.player_turn == 0:
-                angle += 0.4
-            else:
-                angle -= 0.4
+            angle += 2 if not pressed[pygame.K_LSHIFT] else 0.25
+        if pressed[pygame.K_r] and not game_started:
+            rotation += 1 if not pressed[pygame.K_LSHIFT] else -1
+            c.rotate_carrom_men(rotation)
 
         c.striker.position.y = c.striker_y_position[c.player_turn]
         c.striker.position.x = max(c.striker_x_position_limits[0],
                                    min(c.striker.position.x, c.striker_x_position_limits[1]))
-        if c.player_turn == 0:
-            angle = min(0, max(angle, -180))
-        else:
-            angle = min(180, max(angle, 0))
+        angle = min(0, max(angle, -180))
         speed = min(max_speed, max(0, speed))
 
     c.draw_board(win)
     c.draw_coins(win)
 
     if handle_keys:
-        speed_vec.from_polar((speed, angle))
+        speed_vec.from_polar((speed, angle if c.player_turn == 0 else -angle))
         position_vec = speed_vec * 10 + c.striker.position
         # print(position_vec, 'Striker', striker.position)
         pygame.draw.line(win, (0, 0, 0), (int(c.striker.position.x), int(c.striker.position.y)),
@@ -511,7 +507,7 @@ while run:
                 c.striker.position.y = c.striker_y_position[0]
                 c.striker.position.x = (c.striker_x_position_limits[0] + c.striker_x_position_limits[1]) / 2
                 speed = 0
-                angle = -90 if c.player_turn == 0 else 90
+                angle = -90
                 speed_vec = Vector2()
                 break
     if not c.check_moving():
