@@ -77,8 +77,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as li
                 carrom.striker.position = carrom.board.get_striker_position(carrom.player_turn)
             """ Send the final data """
             print("Game Over")
-            # carrom_data = pickle.dumps(carrom)
-            # write_message(client_sock_0, carrom_data)
-            # write_message(client_sock_1, carrom_data)
+            carrom_data = pickle.dumps(carrom)
+            write_message(client_sock_0, carrom_data)
+            write_message(client_sock_1, carrom_data)
 
 
