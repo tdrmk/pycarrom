@@ -138,6 +138,7 @@ with connect_to_server() as sock:
     player_id = int(player_data.decode(encoding))
     player_color = "WHITE" if player_id == 0 else "BLACK"
     print("Obtained player ID:", player_id, "Color:", player_color)
+    print("Waiting for opponent to connect..")
 
     """ Obtain the initial carrom """
     carrom_data = read_message(sock)
@@ -180,9 +181,11 @@ with connect_to_server() as sock:
             carrom = pickle.loads(carrom_data)
             assert isinstance(carrom, Carrom)
             if carrom.game_over:
+                print("Game Over....")
                 message = "Victory!" if carrom.winner == player_id else "You Lost!"
                 break
             if carrom.check_moving() or carrom.player_turn != player_id:
+                print("Waiting for opponents turn or for simulation to complete ...")
                 """ if it is not current turn to strike, just draw the carrom """
                 carrom.draw(win)
                 carrom.board.show_notification(win, "Simulating.." if carrom.check_moving() else "Opponent's Move!")
@@ -194,6 +197,7 @@ with connect_to_server() as sock:
                         pygame.quit()
                         quit()
             else:
+                print("Waiting for user input...")
                 """ Current player needs to strike """
                 handle_user_input(win, carrom)
                 """ Once user set the striker position, then send the striker data to the server """
