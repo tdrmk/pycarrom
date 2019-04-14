@@ -13,6 +13,7 @@ encoding = 'utf-8'
 def connect_to_server():
     """ Create a tkinter window to request server address and tries connecting to it. """
     root = tkinter.Tk()
+    root.title("Enter Server Details")
     address = tkinter.StringVar(value="localhost")
     port = tkinter.StringVar(value="9901")
     status = tkinter.StringVar()
