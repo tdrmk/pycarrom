@@ -7,7 +7,7 @@ def receive(conn: socket.socket, num_bytes):
     while num_bytes > 0:
         new_data = conn.recv(num_bytes)
         if not new_data:
-            raise IOError("Failed to receive data")
+            raise socket.error("Failed to receive data")
         data += new_data
         num_bytes -= len(new_data)
         # print("Got total:", len(data), "current:", len(new_data))

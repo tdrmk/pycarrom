@@ -184,10 +184,11 @@ class Board:
             pygame.draw.circle(win, coin.color, (x_offset, y_offset), int(self.coin_radius))
 
     """ Functions for striker positions """
+
     def get_striker_x_limits(self):
         """ Returns the min and max position of the striker along x axis """
         return self.container.left + self.base_offset + self.base_radius, \
-            self.container.right - self.base_offset - self.base_radius
+               self.container.right - self.base_offset - self.base_radius
 
     def get_striker_y_position(self, player):
         """ Returns the position of the striker along y axis for the given player """
@@ -202,6 +203,37 @@ class Board:
         """ Returns the start position of the striker for the given player """
         return Vector2(self.get_striker_x_position(), self.get_striker_y_position(player))
 
+    """ Function to display notification, draws at the bottom end"""
 
+    def show_notification(self, win, message: str):
+        font_size = self.frame_width // 3
+        font = pygame.font.Font('freesansbold.ttf', font_size)
+        text = font.render(message, True, (0, 0, 0))
+        text_rect = text.get_rect()
+        text_rect.center = (self.board.right - self.frame_width - text_rect.width,
+                            self.board.bottom - self.frame_width // 2)
+        win.blit(text, text_rect)
 
+    """ Function to draw the speed and angle indication of the striker """
 
+    def draw_striker_arrow_pointer(self, win, striker, max_speed, draw_arrow=True):
+        striker_center = striker.position
+        if not draw_arrow:
+            """ Draw a simple line, from striker along orientation of velocity """
+            arrow_position = striker_center + striker.velocity * self.container.width / (3 * max_speed)
+            pygame.draw.line(win, (0, 0, 0), (int(striker_center.x), int(striker_center.y)),
+                             (int(arrow_position.x), int(arrow_position.y)))
+        else:
+            """ Draw a arrow """
+            velocity_indicator = striker.velocity * self.container.width / (3 * max_speed)
+            v_length = velocity_indicator.length()
+            if v_length > 0:
+                arrow_box = Rect(int(striker_center.x - v_length), int(striker_center.y - v_length),
+                                 int(2 * v_length), int(2 * v_length))
+                pygame.draw.arc(win, (255, 100, 0), arrow_box,
+                                radians(velocity_indicator.angle_to(Vector2(1, 0)) - 30),
+                                radians(velocity_indicator.angle_to(Vector2(1, 0)) + 30), 2)
+                position_1 = striker_center + velocity_indicator * 1.1
+                position_2 = striker_center + velocity_indicator * 0.3
+                pygame.draw.line(win, (255, 100, 0), (int(position_1.x), int(position_1.y)),
+                                 (int(position_2.x), int(position_2.y)))

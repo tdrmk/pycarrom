@@ -16,14 +16,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as so
     print("Received Player ID info")
     if player_id == b'0':
         player = 0
+        permit_rotation = True
     else:
         player = 1
+        permit_rotation = False
+
     print("Current player is ", player)
     setup_gui = True
     striker_speed = 0
     striker_angle = 90
     max_angle = 90
     max_speed = 100
+    """ Used to provide initial rotation """
+    coins_orientation = 60
+
     """ Vector for modelling speed """
     speed_vector = Vector2()
     run = True
@@ -42,7 +48,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as so
     clock = pygame.time.Clock()
 
     while run:
-        print("Display already setup")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -65,14 +70,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as so
             message = read_message(sock)
             carrom = pickle.loads(message)
             carrom.draw(win)
+            carrom.board.show_notification(win, "Coins Moving")
             pygame.display.update()
 
         else:
-            print("Carrom is not moving")
+            # print("Carrom is not moving")
             """ If not moving, check player chance """
             if carrom.player_turn == player:
                 clock.tick(60)
-                print("Current player turn")
+                # print("Current player turn")
                 """ Current player turn """
                 pressed = pygame.key.get_pressed()
                 if pressed[pygame.K_a] or pressed[pygame.K_LEFT]:
@@ -95,7 +101,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as so
                 if pressed[pygame.K_e]:
                     """ Rotate the striker towards the rigth """
                     striker_angle -= 2 if not pressed[pygame.K_LSHIFT] else 0.25
+
+                if pressed[pygame.K_r] and permit_rotation:
+                    """ Rotate the coins as per player requirements before starting the game """
+                    coins_orientation += 1 if not pressed[pygame.K_LSHIFT] else -1
+                    carrom.rotate_carrom_men(coins_orientation)
+
                 carrom.draw(win)
+                carrom.board.show_notification(win, "Your Turn! Setup Striker!")
                 x_limits = carrom.board.get_striker_x_limits()
                 carrom.striker.position.x = min(x_limits[1], max(x_limits[0], carrom.striker.position.x))
                 striker_speed = min(max_speed, max(striker_speed, 0))
@@ -110,6 +123,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as so
                 if pressed[pygame.K_SPACE]:
                     carrom.striker.velocity.from_polar((striker_speed,
                         -striker_angle if carrom.player_turn == 0 else striker_angle))
+                    if permit_rotation:
+                        """ Initially allow rotation """
+                        """ Send orientation to the server """
+                        print("Coin Orientation:", coins_orientation)
+                        write_message(sock, str(coins_orientation).encode(encoding))
+                        permit_rotation = False
 
                     striker_data = pickle.dumps(carrom.striker)
                     striker_speed = 0
@@ -118,10 +137,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as so
                     speed_vector = Vector2()
                     write_message(sock, striker_data)
             else:
+                print("Waiting....")
                 carrom.draw(win)
+                carrom.board.show_notification(win, "Waiting. Opponents Turn")
                 pygame.display.update()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        run = False
                 message = read_message(sock)
                 carrom = pickle.loads(message)
+                print("Got carrom")
     pygame.quit()
 
 
