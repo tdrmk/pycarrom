@@ -50,7 +50,7 @@ def connect_to_server():
     return client_socket
 
 
-def handle_user_input(win_, carrom_, max_angle=90, max_speed=100, permit_rotation=False):
+def handle_user_input(win_, carrom_, max_angle=90, max_speed=40, permit_rotation=False):
     """ Have a clock to control display updates based on user input """
     clock = pygame.time.Clock()
 
