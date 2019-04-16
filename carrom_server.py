@@ -10,7 +10,7 @@ server_address = (server_host, server_port)
 encoding = 'utf-8'
 
 """ Width of carrom board to create """
-width = 800
+width = 700
 """ Collision parameters """
 dt = 0.1
 decelerate = 0.3

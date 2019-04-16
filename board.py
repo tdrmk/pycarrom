@@ -227,13 +227,14 @@ class Board:
             """ Draw a arrow """
             velocity_indicator = striker.velocity * self.container.width / (3 * max_speed)
             v_length = velocity_indicator.length()
-            if v_length > 0:
+            """ Added a length greater than 1 to prevent draw arc from throwing an exception """
+            if v_length > 3:
                 arrow_box = Rect(int(striker_center.x - v_length), int(striker_center.y - v_length),
                                  int(2 * v_length), int(2 * v_length))
                 pygame.draw.arc(win, (255, 100, 0), arrow_box,
                                 radians(velocity_indicator.angle_to(Vector2(1, 0)) - 30),
-                                radians(velocity_indicator.angle_to(Vector2(1, 0)) + 30), 2)
+                                radians(velocity_indicator.angle_to(Vector2(1, 0)) + 30), 1)
                 position_1 = striker_center + velocity_indicator * 1.1
-                position_2 = striker_center + velocity_indicator * 0.3
+                position_2 = striker_center + velocity_indicator * 0.2
                 pygame.draw.line(win, (255, 100, 0), (int(position_1.x), int(position_1.y)),
                                  (int(position_2.x), int(position_2.y)))

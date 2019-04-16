@@ -119,6 +119,7 @@ class Carrom:
                 coin.reset()
                 """ Reduce the foul count """
                 self.foul_count[player] -= 1
+                print(self.get_player(player), "Coin Reset, Foul Reduced")
             else:
                 """ If no more pocketed coins to pay for fouls, then place the queen if acquired by the place """
                 """ Both players can't have the queen simultaneously """
@@ -129,6 +130,7 @@ class Carrom:
                     self.queen_on_hold = False
                     self.pocketed_queen = False
                     self.queen.reset()
+                    print(self.get_player(player), "Queen Reset, Foul Reduced")
                 break
 
     def __update_turn__(self, change: bool):
@@ -144,7 +146,7 @@ class Carrom:
             """ If all the player coins of the current player are pocketed """
             if not self.pocketed_queen:
                 """ However if queen was not pocketed, current player incurs a penalty of 2 player coins  """
-                print("Current player pocketed all its coins without pocketing the queen, and incurs penalty.")
+                print(self.current_player(), "Pocketed All Coins without Capturing Queen, Incurs Heavy Penalty")
                 self.foul_count[self.player_turn] += 2
                 """ Call update turn function again with updated penalty. 
                 Note that player turn changes irrespective of whether turn was to change or not."""
@@ -158,6 +160,7 @@ class Carrom:
                 self.winner = self.player_turn
                 self.reason = "Player pocketed all coins"
                 self.game_over = True
+                print(self.current_player(), "Pocketed All Coins, Declared Winner!!")
                 """ Don't proceed """
                 return
         other_player = (self.player_turn + 1) % 2
@@ -170,10 +173,12 @@ class Carrom:
                 coin.reset()
                 """ Add penalty for hitting other's coin """
                 self.foul_count[self.player_turn] += 2
+                print(self.current_player(), "Pocketed All Enemy Coins without Capturing Queen, Incurs Heavy Penalty")
                 if self.pocketed_queen:
                     """ If queen was pocketed in the current and on hold, place it back """
                     self.queen_on_hold = False
                     self.pocketed_queen = False
+                    print(self.current_player(), "Pocketed All Enemy Coins When Queen On Hold, Queen Reset")
                     self.queen.reset()
 
                 """ Change the turn of the player """
@@ -184,6 +189,8 @@ class Carrom:
                 self.winner = other_player
                 self.reason = "Player pocketed all of other players coins"
                 self.game_over = True
+                print(self.current_player(), "Pocketed All Enemy Coins,",
+                      self.get_player(other_player), "Declared Winner!!")
                 """ Don;t proceed """
                 return
 
@@ -192,8 +199,17 @@ class Carrom:
         self.pocketed_striker = False
         self.striker.velocity = Vector2()
         if change:
+            print(self.current_player(), "Lost Turn.")
             """ Change turn if specified """
             self.player_turn = (self.player_turn + 1) % 2
+            print(self.current_player(), "Turn Begins")
+
+    def current_player(self):
+        return "WHITE" if self.player_turn == 0 else "BLACK"
+
+    @staticmethod
+    def get_player(player):
+        return "WHITE" if player == 0 else "BLACK"
 
     def apply_rules(self):
         """ Once all coins on the board stopped moving after strike, call this function to decide what to do next
@@ -208,6 +224,7 @@ class Carrom:
                 """ Queen not on hold nor pocketed, and place it back to the center """
                 self.queen_on_hold = False
                 self.pocketed_queen = False
+                print(self.current_player(), "Pocketed Striker, Queen Reset")
                 self.queen.reset()
             for coin in self.current_pocketed:
                 """ For all the player coins pocketed in this turn, place it back to the center """
@@ -215,12 +232,13 @@ class Carrom:
                     """ If pocketed coin belongs to player, then place it back """
                     self.player_coins[coin.get_player()].append(coin)
                     self.pocketed_coins[coin.get_player()].remove(coin)
+                    print(self.current_player(), "Pocketed Striker, Coin Reset")
                     coin.reset()
             """ Add a foul to the current player """
             self.foul_count[self.player_turn] += 1
             """ Update the turn to the next player, 
             also handle cases if all other coins were pocketed or place coins back to center to handle fouls """
-            print("Pocketed Striker")
+            print(self.current_player(), "Pocketed Striker, Incurred Foul")
             self.__update_turn__(change=True)
 
         elif self.pocketed_queen and not self.has_queen[0] and not self.has_queen[1]:
@@ -233,7 +251,7 @@ class Carrom:
                     self.has_queen[self.player_turn] = True
                     self.queen_on_hold = False
                     """ Don't change the turn, however handle penalties if any from previous turn """
-                    print("Print Pocketed Queen don't change turn")
+                    print(self.current_player(), "Pocketed Queen, With Follow")
                     self.__update_turn__(change=False)
                     break
             else:
@@ -245,7 +263,7 @@ class Carrom:
                     self.pocketed_queen = False
                     self.queen.reset()
                     """ Change the turn """
-                    print("Queen Lost Hold")
+                    print(self.current_player(), "Lost Queen From Hold, No Follow")
                     self.__update_turn__(change=True)
                 else:
                     """ if queen was pocketed in the current turn without pocketing 
@@ -253,7 +271,7 @@ class Carrom:
                     if it follows with a player coin """
                     self.queen_on_hold = True
                     """ Don;t change turn """
-                    print(" Queen On Hold ")
+                    print(self.current_player(), "Pocketed Queen, On Hold")
                     self.__update_turn__(change=False)
 
         else:
@@ -261,12 +279,12 @@ class Carrom:
             for coin in self.current_pocketed:
                 if coin.get_player() == self.player_turn:
                     """ Can keep turn """
-                    print("Pocketed coin")
+                    print(self.current_player(), "Pocketed Coin(s)")
                     self.__update_turn__(change=False)
                     break
             else:
                 """ If no player coin was pocketed or no coin was pocketed, the change the turn """
-                print("Did't pocket anything")
+                print(self.current_player(), "Pocketed Nothing")
                 self.__update_turn__(change=True)
 
     def draw(self, win):
