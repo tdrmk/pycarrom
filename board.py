@@ -41,14 +41,27 @@ class Board:
         self.m = m
         """ Calculate the pocket radius and the center positions """
         self.pocket_radius = m * Board.POCKET_RADIUS
+        self.coin_radius = m * Board.COIN_RADIUS
+        self.striker_radius = m * Board.STRIKER_RADIUS
         self.pocket_centers = [
             Vector2(self.container.left + self.pocket_radius, self.container.top + self.pocket_radius),
             Vector2(self.container.right - self.pocket_radius, self.container.top + self.pocket_radius),
             Vector2(self.container.right - self.pocket_radius, self.container.bottom - self.pocket_radius),
             Vector2(self.container.left + self.pocket_radius, self.container.bottom - self.pocket_radius),
         ]
-        self.coin_radius = m * Board.COIN_RADIUS
-        self.striker_radius = m * Board.STRIKER_RADIUS
+        """ These are solely defined for the purpose of rebounds """
+        self.diagonal_pocket_opposite = [
+            (self.container.right - self.striker_radius, self.container.bottom - self.striker_radius),
+            (self.container.left + self.striker_radius, self.container.bottom - self.striker_radius),
+            (self.container.left + self.striker_radius, self.container.top + self.striker_radius),
+            (self.container.right - self.striker_radius, self.container.top + self.striker_radius),
+        ]
+        self.normal_vectors = [
+            (Vector2(-1, 0), Vector2(0, -1)),
+            (Vector2(1, 0), Vector2(0, -1)),
+            (Vector2(1, 0), Vector2(0, 1)),
+            (Vector2(-1, 0), Vector2(0, 1)),
+        ]
         """ Calculate the base line positions, the lines defining the region where player places the striker """
         base_offset = m * Board.BASE_OFFSET
         base_distance = m * Board.BASE_DISTANCE
