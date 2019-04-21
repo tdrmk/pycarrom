@@ -19,13 +19,24 @@ def check_along_path(start: Vector2, end: Vector2, distance, coins, round_start=
     return False
 
 
+def check_inside_container(position, radius, container):
+    """ This function checks if the given coin (given by position and radius)
+    lies entirely within the container of not """
+    boundary_points = [
+        Vector2(position.x + radius, position.y), Vector2(position.x, position.y + radius),
+        Vector2(position.x - radius, position.y), Vector2(position.x, position.y - radius),
+    ]
+    """ returns true if all the boundary points lies within the container. """
+    return all(container.collidepoint(point) for point in boundary_points)
+
+
 def ___(angle_):
     """ This function is used to normalize angles """
     angle_ = angle_ % 360
     return angle_ if angle_ <= 180 else angle_ - 360
 
 
-def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_angle=60, max_rebound_cut_shot_angle=40):
+def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_angle=70, max_rebound_cut_shot_angle=70):
     """ Carrom Ai which knows to play direct shots, rebound shots and cuts """
     player, opponent = carrom.player_turn, (carrom.player_turn + 1) % 2
     """ Coins on the board and the coins which player can hit """
@@ -68,7 +79,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                                                         decelerate, e)
                     striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                     carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                    print("Direct Strike")
+                    print("AI", carrom.current_player(), "Hits Direct Strike")
                     return
     """ Try hitting rebound shots, striker hits the board frame and then hits the inline coin """
     for index, center in enumerate(board.pocket_centers):
@@ -99,7 +110,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                                                                rebound_position, center, decelerate, e)
                             striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                             carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                            print("Rebound top/bottom")
+                            print("AI", carrom.current_player(), "Tries Rebound Shot (top/bottom)")
                             return
                 """ Rebound with left or right """
                 rebound_x = board.diagonal_pocket_opposite[index][0]
@@ -124,7 +135,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                                                                rebound_position, center, decelerate, e)
                             striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                             carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                            print("Rebound left/right")
+                            print("AI", carrom.current_player(), "Tries Rebound Shot (left/right)")
                             return
 
     """ Try doubling, hit the coin onto the frame, then goes to the pocket,
@@ -162,7 +173,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                     carrom.striker.position = striker_position
                     striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                     carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                    print("Doubling shot")
+                    print("AI", carrom.current_player(), "Hits Doubling shot")
                     return
     """ Try cut shots, within the given angle, may not always work, due to in-accuracies in simulation 
     due to discretization of simulations """
@@ -170,8 +181,10 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
         for coin in playable_coins:
             expected_position = center + (coin.position - center).normalize() * \
                                 (center.distance_to(coin.position) + striker_radius + coin_radius)
+            """ Also check if expected position is with board.. """
             if not check_along_path(coin.position, center, 2 * coin_radius,
-                                    [coin_ for coin_ in board_coins if coin_ != coin]):
+                                    [coin_ for coin_ in board_coins if coin_ != coin])\
+                    and check_inside_container(expected_position, striker_radius, container):
                 for striker_x in range(int(x_limits[0]), int(x_limits[1] + 1), 1):
                     striker_position = Vector2(striker_x, y_position)
                     force_angle = ___((center - coin.position).angle_to(expected_position - striker_position))
@@ -185,16 +198,17 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                         carrom.striker.position = striker_position
                         striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                         carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                        print("Cut Shot with angle:", force_angle, "degrees")
+                        print("AI", carrom.current_player(), "Cut Shot with angle:", "%0.2f" % force_angle, "degrees")
                         return
     """ Also try out rebound cut shots, if possible, not accurate though """
     for index, center in enumerate(carrom.board.pocket_centers):
         for coin in playable_coins:
             expected_position = center + (coin.position - center).normalize() * \
                                 (center.distance_to(coin.position) + striker_radius + coin_radius)
-
+            """ Also check if expected position is with board.. """
             if not check_along_path(coin.position, center, 2 * coin_radius,
-                                    [coin_ for coin_ in board_coins if coin_ != coin]):
+                                    [coin_ for coin_ in board_coins if coin_ != coin])\
+                    and check_inside_container(expected_position, striker_radius, container):
                 for striker_x in range(int(x_limits[0]), int(x_limits[1] + 1), 1):
                     striker_position = Vector2(striker_x, y_position)
                     rebound_x__ = lambda rebound_y_: \
@@ -212,15 +226,6 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                     for rebound_position in rebounds:
                         angle_of_attack = ___((rebound_position - striker_position).angle_to(direction_vec))
                         force_angle = ___((center - coin.position).angle_to(expected_position - rebound_position))
-                        print("StrikerPosition:", striker_position, "EXPECTED:", expected_position, "AOT:",
-                              angle_of_attack, "Force:", force_angle,
-                              "Expected->Rbound: ",
-                              check_along_path(rebound_position, expected_position, striker_radius + coin_radius,
-                                               [coin_ for coin_ in board_coins if coin_ != coin], round_end=True),
-                              "Rebound->Striker:",
-                              check_along_path(rebound_position, striker_position, coin_radius + striker_radius,
-                                               board_coins))
-
                         if abs(force_angle) <= max_rebound_cut_shot_angle and abs(angle_of_attack) <= max_angle and \
                                 not check_along_path(rebound_position, expected_position, striker_radius + coin_radius,
                                                      [coin_ for coin_ in board_coins if coin_ != coin],
@@ -233,7 +238,8 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                                 force_angle, center, decelerate, e, dt)
                             striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                             carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                            print("Rebound Cut Shot with angle:", force_angle, "degrees")
+                            print("AI", carrom.current_player(), "Tries Rebound Cut Shot with angle:",
+                                  "%0.2f" % force_angle, "degrees")
                             return
 
     """ Simply hit straight at some coin """
@@ -251,7 +257,8 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                 carrom.striker.position = striker_position
                 striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                 carrom.striker.velocity.from_polar((max_speed, striker_angle))
-                print("Simply direct hit", striker_position, striker_angle, coin.position)
+                print("AI", carrom.current_player(), "does a simply direct hit with angle:",
+                      "%0.2f" % angle_of_attack, "degrees")
                 return
 
     """ Simply hit rebound shot at some coin """
@@ -286,7 +293,8 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                     carrom.striker.position = striker_position
                     striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                     carrom.striker.velocity.from_polar((max_speed, striker_angle))
-                    print("Simply rebound hit", striker_position, striker_angle, coin.position)
+                    print("AI", carrom.current_player(), "does a simply rebound hit with angle:",
+                          "%0.2f" % angle_of_attack, "degrees")
                     return
     print("Nothing done..")
 
