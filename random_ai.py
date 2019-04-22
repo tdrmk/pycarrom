@@ -6,7 +6,7 @@ from pygame import Vector2
 
 def carrom_score(player, carrom: Carrom):
     other_player = (player + 1) % 2
-    score = len(carrom.pocketed_coins[player]) - 2 * len(carrom.pocketed_coins[other_player]) - carrom.foul_count[player]
+    score = len(carrom.pocketed_coins[player]) - 2 * len(carrom.pocketed_coins[other_player]) - 3 * carrom.foul_count[player]
     if carrom.has_queen[player]:
         score += 15
     elif carrom.queen_on_hold:
