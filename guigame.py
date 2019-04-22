@@ -4,6 +4,7 @@ import pygame
 from ai import ai
 from random_ai import ai as random_ai
 import argparse
+from start_menu import start_window
 
 player_choices = ['ai', 'random', 'human']
 parser = argparse.ArgumentParser(description="PyCarrom is a two player carrom game played between humans or ai")
@@ -17,6 +18,7 @@ parser.add_argument("--decelerate", type=float, default=0.3, help="deceleration 
 parser.add_argument("--e", type=float, default=0.9, help="co-efficient of restitution for collisions")
 parser.add_argument("--num_updates", type=int, default=10, help="number of updates before drawing to screen")
 parser.add_argument("--num_random_choices", type=int, default=20, help="number of search points for random ai")
+parser.add_argument("--no_start_menu", action="store_true", help="disable start menu")
 parser.add_argument("--fps", type=int, default=60, help="frames per second")
 args = parser.parse_args()
 
@@ -35,12 +37,26 @@ max_angle = float(args.max_angle)
 max_speed = float(args.max_speed)
 
 fps = int(args.fps)
-player1, player2 = args.player1, args.player2
+
+if args.no_start_menu:
+    player1, player2 = args.player1, args.player2
+else:
+    player1, player2 = start_window(width, fps)
+
 """ This is used in case of random ai"""
 num_random_choices = int(args.num_random_choices)
 
 print("Parameters are width:", width, "dt:", dt, "decelerate:", decelerate, "e:", e, "max_angle:", max_angle,
       "max_speed:", max_speed, "num_updates:", num_updates, "fps:", fps, "player1:", player1, "player2:", player2)
+
+pygame.init()
+win = pygame.display.set_mode((width, width))
+pygame.display.set_caption("PyCarrom: WHITE(%s) vs BLACK(%s)" % (player1, player2))
+
+carrom = Carrom(Rect(0, 0, width, width))
+""" Orientation changes are only allowed for the first turn"""
+permit_orientation = True
+players = [player1, player2]
 
 """ Have a clock to control display updates based on user input """
 clock = pygame.time.Clock()
@@ -125,15 +141,6 @@ def handle_user_input(win_, carrom_, permit_rotation=False):
         carrom_.board.draw_striker_arrow_pointer(win_, carrom_.striker, max_speed)
         pygame.display.update()
 
-
-pygame.init()
-win = pygame.display.set_mode((width, width))
-pygame.display.set_caption("PyCarrom: WHITE(%s) vs BLACK(%s)" % (player1, player2))
-
-carrom = Carrom(Rect(0, 0, width, width))
-""" Orientation changes are only allowed for the first turn"""
-permit_orientation = True
-players = [player1, player2]
 
 while not carrom.game_over:
     """ Initialize the striker position """
