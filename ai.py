@@ -58,9 +58,17 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
     y_position = carrom.board.get_striker_y_position(player)
     coin_radius, striker_radius = carrom.board.coin_radius, carrom.board.striker_radius
     board, container = carrom.board, carrom.board.container
-
+    pocket_radius = board.pocket_radius
+    pocket_centers = board.pocket_centers.copy()
+    """ Added more positions to pocket center apart from just the centers, 
+    add more positions to given more chances to pocket """
+    for pocket_center in board.pocket_centers:
+        pocket_centers.append(Vector2(pocket_center.x + pocket_radius - coin_radius, pocket_center.y))
+        pocket_centers.append(Vector2(pocket_center.x - pocket_radius + coin_radius, pocket_center.y))
+        pocket_centers.append(Vector2(pocket_center.x, pocket_center.y + pocket_radius - coin_radius))
+        pocket_centers.append(Vector2(pocket_center.x, pocket_center.y - pocket_radius + coin_radius))
     """ Try hitting direct shots if any """
-    for center in board.pocket_centers:
+    for center in pocket_centers:
         for coin in playable_coins:
             if not check_along_path(coin.position, center, 2 * coin_radius,
                                     [coin_ for coin_ in board_coins if coin_ != coin]) and center.y != coin.position.y:
@@ -141,7 +149,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
     """ Try doubling, hit the coin onto the frame, then goes to the pocket,
     NOTE:this may not always work, if coin is close to the frame, chances are that it will hit the striker again """
 
-    for center in board.pocket_centers:
+    for center in pocket_centers:
         for coin in playable_coins:
             rebound_x__ = lambda rebound_y_: center.x + (coin.position.x - center.x) * \
                                              (center.y - rebound_y_) / (center.y + coin.position.y - 2 * rebound_y_)
@@ -177,7 +185,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                     return
     """ Try cut shots, within the given angle, may not always work, due to in-accuracies in simulation 
     due to discretization of simulations """
-    for center in carrom.board.pocket_centers:
+    for center in pocket_centers:
         for coin in playable_coins:
             expected_position = center + (coin.position - center).normalize() * \
                                 (center.distance_to(coin.position) + striker_radius + coin_radius)
@@ -198,10 +206,11 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                         carrom.striker.position = striker_position
                         striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                         carrom.striker.velocity.from_polar((striker_speed, striker_angle))
-                        print("AI", carrom.current_player(), "Cut Shot with angle:", "%0.2f" % force_angle, "degrees")
+                        print("AI", carrom.current_player(), "Cut Shot with angle:", "%0.2f" % force_angle, "degrees",
+                              "Speed:", striker_speed)
                         return
     """ Also try out rebound cut shots, if possible, not accurate though """
-    for index, center in enumerate(carrom.board.pocket_centers):
+    for center in pocket_centers:
         for coin in playable_coins:
             expected_position = center + (coin.position - center).normalize() * \
                                 (center.distance_to(coin.position) + striker_radius + coin_radius)
@@ -239,7 +248,7 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                             striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
                             carrom.striker.velocity.from_polar((striker_speed, striker_angle))
                             print("AI", carrom.current_player(), "Tries Rebound Cut Shot with angle:",
-                                  "%0.2f" % force_angle, "degrees")
+                                  "%0.2f" % force_angle, "degrees", "Speed:", striker_speed)
                             return
 
     """ Simply hit straight at some coin """
