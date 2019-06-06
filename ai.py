@@ -305,6 +305,42 @@ def ai(carrom: Carrom, max_angle, max_speed, decelerate, e, dt, max_cut_shot_ang
                     print("AI", carrom.current_player(), "does a simply rebound hit with angle:",
                           "%0.2f" % angle_of_attack, "degrees")
                     return
+    """ If nothing can be hit either way don't worry about the fouls try hitting the coin """
+    """ Simply hit straight at some coin """
+    for coin in playable_coins:
+        for striker_x in range(int(x_limits[0]), int(x_limits[1] + 1), 1):
+            striker_position = Vector2(striker_x, y_position)
+            angle_of_attack = ___((coin.position - striker_position).angle_to(direction_vec))
+            attack_vector = coin.position - striker_position
+            if abs(angle_of_attack) <= max_angle:
+                """ Simply hit the coins with max speed """
+                carrom.striker.position = striker_position
+                striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
+                carrom.striker.velocity.from_polar((max_speed, striker_angle))
+                print("AI", carrom.current_player(), "does a simply direct hit with angle:",
+                      "%0.2f" % angle_of_attack, "degrees", "may face penalty")
+                return
+    for coin in playable_coins:
+        for striker_x in range(int(x_limits[0]), int(x_limits[1] + 1), 1):
+            striker_position, c_pos, s_radius = Vector2(striker_x, y_position), coin.position, striker_radius
+            c_left, c_right, c_top, c_bottom = container.left, container.right, container.top, container.bottom
+            rebounds = [
+                Vector2(c_left + s_radius, rebound_y__(striker_position, c_pos, c_left + s_radius)),
+                Vector2(c_right - s_radius, rebound_y__(striker_position, c_pos, c_right - s_radius)),
+                Vector2(rebound_x__(striker_position, c_pos, c_top + s_radius), c_top + s_radius),
+                Vector2(rebound_x__(striker_position, c_pos, c_bottom - s_radius), c_bottom - s_radius),
+            ]
+            for rebound_position in rebounds:
+                angle_of_attack = ___((rebound_position - striker_position).angle_to(direction_vec))
+                attack_vector = coin.position - rebound_position
+                if abs(angle_of_attack) <= max_angle:
+                    """ Simply hit the coins with max speed """
+                    carrom.striker.position = striker_position
+                    striker_angle = -90 - angle_of_attack if player == 0 else 90 - angle_of_attack
+                    carrom.striker.velocity.from_polar((max_speed, striker_angle))
+                    print("AI", carrom.current_player(), "does a simply rebound hit with angle:",
+                          "%0.2f" % angle_of_attack, "degrees", "may face penalty")
+                    return
     print("Nothing done..")
 
 
